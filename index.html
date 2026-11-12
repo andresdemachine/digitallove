@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05030a">
+  <title>Digital Love</title>
+  <link rel="icon" type="image/png" href="disco-ball.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Monoton&family=VT323&family=Orbitron:wght@500;800&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.5/dist/sweetalert2.all.min.js"></script>
+  <style>
+    :root {
+      --bg: #05030a;
+      --pink: #ff2fb3;
+      --cyan: #19f0ff;
+      --gold: #ffcc33;
+      --orange: #ff7a1a;
+      --code: #e8d9a8;
+      --str: #f7b267;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: #fff;
+    }
+
+    body {
+      font-family: "VT323", monospace;
+    }
+
+    /* ---------- fondo disco ---------- */
+    #floor {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at 50% 120%, rgba(255, 47, 179, .35), transparent 60%),
+        radial-gradient(ellipse at 50% -20%, rgba(25, 240, 255, .18), transparent 55%);
+    }
+
+    #grid {
+      position: fixed;
+      left: -50%;
+      right: -50%;
+      bottom: -10%;
+      height: 55%;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 47, 179, .55) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(255, 47, 179, .55) 2px, transparent 2px);
+      background-size: 60px 60px;
+      transform: perspective(400px) rotateX(65deg);
+      animation: gridmove 1.92s linear infinite;
+      mask-image: linear-gradient(to top, #000 30%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to top, #000 30%, transparent 100%);
+      opacity: .5;
+    }
+
+    @keyframes gridmove {
+      to {
+        background-position: 0 60px;
+      }
+    }
+
+    /* código de fondo como en el video */
+    #code {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      padding: 24px 28px;
+      pointer-events: none;
+      font-size: clamp(18px, 2.6vw, 30px);
+      line-height: 1.45;
+      color: var(--code);
+      white-space: pre;
+      overflow: hidden;
+      text-shadow: 0 0 6px rgba(255, 204, 51, .35);
+    }
+
+    #code .kw {
+      color: #c792ea;
+    }
+
+    #code .fn {
+      color: #82aaff;
+    }
+
+    #code .s {
+      color: var(--str);
+    }
+
+    #code .cur::after {
+      content: "█";
+      animation: blink 1s steps(1) infinite;
+      color: var(--gold);
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    /* líneas de interferencia VHS */
+    .scan {
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 2px;
+      z-index: 3;
+      pointer-events: none;
+      background: var(--orange);
+      box-shadow: 0 0 8px var(--orange);
+      animation: scanmove 7s linear infinite;
+    }
+
+    .scan.b {
+      background: #4f6bff;
+      box-shadow: 0 0 8px #4f6bff;
+      animation-duration: 11s;
+      animation-delay: -4s;
+    }
+
+    .scan.c {
+      animation-duration: 9s;
+      animation-delay: -2s;
+      opacity: .6;
+    }
+
+    @keyframes scanmove {
+      from {
+        top: -2%;
+      }
+
+      to {
+        top: 102%;
+      }
+    }
+
+    #crt {
+      position: fixed;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, .25) 0 1px, transparent 1px 3px);
+      /* sin mix-blend-mode: es muy pesado a pantalla completa */
+    }
+
+    #vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, .75) 100%);
+    }
+
+    /* ecualizador */
+    #eq {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 22vh;
+      z-index: 2;
+      pointer-events: none;
+      opacity: .75;
+    }
+
+    /* barra inferior */
+    #hud {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 6;
+      /* respeta la barra de inicio / notch del celular */
+      padding: 10px max(16px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: "Orbitron", sans-serif;
+      font-size: 12px;
+      color: #ffd8f1;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    #bar {
+      flex: 1;
+      height: 3px;
+      background: rgba(255, 255, 255, .15);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    #bar i {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--cyan), var(--pink), var(--gold));
+    }
+
+    #hud button {
+      all: unset;
+      cursor: pointer;
+      padding: 4px 8px;
+      border: 1px solid rgba(255, 255, 255, .3);
+      border-radius: 4px;
+    }
+
+    #hud button:hover {
+      border-color: var(--pink);
+      color: #fff;
+    }
+
+    /* ---------- pantalla de inicio ---------- */
+    #start {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 16px;
+      background: radial-gradient(ellipse at center, rgba(5, 3, 10, .6), rgba(5, 3, 10, .95));
+    }
+
+    #start h1 {
+      font-family: "Monoton", cursive;
+      font-weight: 400;
+      margin: 0 0 6px;
+      font-size: clamp(42px, 11vw, 120px);
+      line-height: 1;
+      background: linear-gradient(180deg, #fff 0%, var(--gold) 35%, var(--pink) 70%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 18px rgba(255, 47, 179, .6));
+    }
+
+    #start p {
+      font-family: "Orbitron", sans-serif;
+      letter-spacing: .4em;
+      color: var(--cyan);
+      margin: 0 0 32px;
+      font-size: 13px;
+    }
+
+    #play {
+      font-family: "Orbitron", sans-serif;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: .25em;
+      padding: 16px 34px;
+      color: #fff;
+      cursor: pointer;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--pink), #8a2be2, var(--cyan));
+      background-size: 200% 100%;
+      box-shadow: 0 0 24px rgba(255, 47, 179, .7), inset 0 0 12px rgba(255, 255, 255, .3);
+      animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes shimmer {
+      to {
+        background-position: 200% 0;
+      }
+    }
+
+    #start small {
+      display: block;
+      margin-top: 18px;
+      color: #9a8fb0;
+      font-size: 18px;
+    }
+
+    body.beat #code {
+      text-shadow: 0 0 14px rgba(255, 47, 179, .7);
+    }
+
+    /* ---------- SweetAlert estilo ventana Windows retro ---------- */
+    .swal2-container {
+      z-index: 5 !important;
+    }
+
+    .swal2-container.swal2-backdrop-show {
+      background: transparent !important;
+    }
+
+    .dl-popup.swal2-popup {
+      width: min(420px, calc(100vw - 32px)) !important;
+      padding: 0 !important;
+      border-radius: 6px !important;
+      background: linear-gradient(180deg, #f3f3f6, #dcdde4) !important;
+      border: 1px solid #9aa0b4;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, .6) inset, 0 18px 50px rgba(0, 0, 0, .6), 0 0 40px var(--glow, rgba(255, 47, 179, .5)) !important;
+      font-family: "Segoe UI", Tahoma, sans-serif !important;
+      color: #1a1a1a !important;
+      display: grid !important;
+      grid-template-columns: auto 1fr;
+      grid-template-areas: "title title" "icon text" "actions actions";
+      overflow: hidden;
+    }
+
+    .dl-popup .swal2-title {
+      grid-area: title;
+      margin: 0 !important;
+      padding: 9px 40px 9px 36px !important;
+      text-align: left !important;
+      font: 400 15px "Segoe UI", Tahoma, sans-serif !important;
+      color: #222 !important;
+      background: linear-gradient(180deg, #ffffff, #e9eaf0);
+      border-bottom: 1px solid #c9ccd8;
+      position: relative;
+    }
+
+    .dl-popup .swal2-title::before {
+      content: "✒";
+      position: absolute;
+      left: 12px;
+      top: 7px;
+      font-size: 15px;
+      color: #2a6fd8;
+    }
+
+    .dl-popup .swal2-close {
+      position: absolute !important;
+      top: 2px !important;
+      right: 4px !important;
+      width: 34px !important;
+      height: 30px !important;
+      font-size: 22px !important;
+      color: #333 !important;
+      border-radius: 3px;
+    }
+
+    .dl-popup .swal2-close:hover {
+      background: #e81123 !important;
+      color: #fff !important;
+    }
+
+    .dl-popup .swal2-icon {
+      grid-area: icon;
+      width: 44px !important;
+      height: 44px !important;
+      margin: 26px 0 18px 26px !important;
+      border-width: 0 !important;
+      background: radial-gradient(circle at 35% 30%, #5fa8ff, #1565d8 70%);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, .3), inset 0 1px 2px rgba(255, 255, 255, .6);
+    }
+
+    .dl-popup .swal2-icon .swal2-icon-content {
+      color: #fff !important;
+      font: 700 26px Georgia, serif !important;
+    }
+
+    .dl-popup .swal2-html-container {
+      grid-area: text;
+      margin: 0 !important;
+      padding: 26px 22px 18px 16px !important;
+      text-align: left !important;
+      font: 400 17px "Segoe UI", Tahoma, sans-serif !important;
+      color: #111 !important;
+      align-self: center;
+    }
+
+    .dl-popup .swal2-actions {
+      grid-area: actions;
+      justify-content: flex-end !important;
+      margin: 0 !important;
+      padding: 10px 14px 14px !important;
+      background: #e9eaf0;
+      border-top: 1px solid #d0d3de;
+      width: 100%;
+    }
+
+    .dl-popup .swal2-confirm {
+      margin: 0 !important;
+      min-width: 96px;
+      padding: 5px 18px !important;
+      border-radius: 3px !important;
+      background: linear-gradient(180deg, #fdfdfd, #e3e4ea) !important;
+      color: #111 !important;
+      border: 1px solid #2f6fd6 !important;
+      outline: 1px dotted #333;
+      outline-offset: -4px;
+      font: 400 14px "Segoe UI", Tahoma, sans-serif !important;
+      box-shadow: none !important;
+    }
+
+    .dl-popup .swal2-confirm:hover {
+      background: linear-gradient(180deg, #eaf3ff, #cfe2ff) !important;
+    }
+
+    .dl-popup .swal2-timer-progress-bar {
+      background: linear-gradient(90deg, var(--cyan), var(--pink)) !important;
+      height: 3px !important;
+    }
+
+    /* ventanas fantasma que se quedan detrás */
+    .ghost {
+      position: fixed;
+      z-index: 2;
+      width: min(360px, 80vw);
+      pointer-events: none;
+      border-radius: 6px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #f3f3f6, #dcdde4);
+      color: #111;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+      opacity: 0;
+      transform: scale(.9);
+      transition: opacity .4s, transform .4s, filter .4s;
+      filter: saturate(.6);
+    }
+
+    .ghost.on {
+      opacity: .55;
+      transform: scale(1);
+    }
+
+    .ghost.off {
+      opacity: 0;
+      transform: scale(.85) translateY(20px);
+    }
+
+    .ghost .t {
+      padding: 6px 10px;
+      font-size: 13px;
+      background: #fff;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .ghost .b {
+      padding: 16px 16px 20px;
+      font-size: 15px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .ghost .b::before {
+      content: "i";
+      flex: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font: 700 18px Georgia, serif;
+      background: radial-gradient(circle at 35% 30%, #5fa8ff, #1565d8 70%);
+    }
+
+    @keyframes dlIn {
+      0% {
+        opacity: 0;
+        transform: scale(.6) skewX(8deg);
+        filter: hue-rotate(90deg) blur(4px);
+      }
+
+      60% {
+        opacity: 1;
+        transform: scale(1.05) skewX(-2deg);
+        filter: none;
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes dlOut {
+      to {
+        opacity: 0;
+        transform: scale(.9) translateY(10px);
+        filter: blur(3px);
+      }
+    }
+
+    .dl-in {
+      animation: dlIn .35s ease-out both;
+    }
+
+    .dl-out {
+      animation: dlOut .25s ease-in both;
+    }
+
+    /* ============ MODO FIESTA (coro "Ooh, I don't know what to do") ============ */
+    /* reflectores que cuelgan del techo y barren la pista */
+    #lights { position: fixed; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+    .beam {
+      position: absolute; top: -2vh; width: 34vw; min-width: 220px; height: 125vh;
+      margin-left: calc(max(34vw, 220px) / -2);
+      transform-origin: 50% 0; transform: rotate(var(--from));
+      clip-path: polygon(47% 0, 53% 0, 100% 100%, 0 100%);
+      background: linear-gradient(to bottom, var(--c) 0%, color-mix(in srgb, var(--c) 35%, transparent) 45%, transparent 85%);
+      mix-blend-mode: screen;
+      opacity: 0; transition: opacity 1.2s ease;
+      animation: sweep var(--speed) ease-in-out infinite alternate; animation-delay: var(--delay);
+      animation-play-state: paused;
+    }
+    .lamp {
+      position: absolute; top: -10px; width: 26px; height: 26px; margin-left: -13px; border-radius: 50%;
+      background: radial-gradient(circle, #fff 0 25%, var(--c) 55%, transparent 72%);
+      opacity: 0; transition: opacity 1s; filter: drop-shadow(0 0 10px var(--c));
+    }
+    @keyframes sweep { from { transform: rotate(var(--from)); } to { transform: rotate(var(--to)); } }
+
+    /* bola disco que baja del techo */
+    #ball {
+      position: fixed; left: 50%; top: 0; z-index: 3; width: clamp(80px, 12vw, 130px); pointer-events: none;
+      transform: translate(-50%, -140%); transition: transform 1.6s cubic-bezier(.2, 1.4, .4, 1);
+    }
+    #ball::before {
+      content: ""; position: absolute; left: 50%; bottom: 92%; width: 2px; height: 40vh; margin-left: -1px;
+      background: linear-gradient(to top, #c9b6ff, rgba(201, 182, 255, 0));
+    }
+    #ball img { display: block; width: 100%; transform-origin: 50% 0; animation: ballswing 1.92s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 22px rgba(190, 140, 255, .9)); }
+    @keyframes ballswing { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+
+    /* puntitos de luz reflejados por la bola, girando por toda la pantalla */
+    #sparkles {
+      position: fixed; left: 50%; top: 0; width: 220vmax; height: 220vmax; margin: -110vmax 0 0 -110vmax;
+      z-index: 3; pointer-events: none; opacity: 0; transition: opacity 1.5s;
+      animation: spin 14s linear infinite; animation-play-state: paused;
+    }
+    #sparkles i { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #fff;
+      box-shadow: 0 0 10px 3px var(--c, #fff); animation: twinkle 1.2s ease-in-out infinite alternate; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes twinkle { from { opacity: .2; transform: scale(.6); } to { opacity: 1; transform: scale(1.2); } }
+
+    /* flash suave al ritmo (125 bpm) */
+    #flash { position: fixed; inset: 0; z-index: 4; pointer-events: none; opacity: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, .5), transparent 70%); }
+    @keyframes flash { 0% { opacity: .35; } 30%, 100% { opacity: 0; } }
+
+    @keyframes groove {
+      0%   { transform: translate(-14px, 0) rotate(-2deg); }
+      50%  { transform: translate(0, -10px) rotate(0); }
+      100% { transform: translate(14px, 0) rotate(2deg); }
+    }
+    @keyframes bob { from { transform: translateY(-8px) rotate(-3deg); } to { transform: translateY(8px) rotate(3deg); } }
+    @keyframes codecolor { 0%, 100% { color: #ffb3e6; } 33% { color: #9ef7ff; } 66% { color: #ffe39a; } }
+    @keyframes pulse { 0% { opacity: 1; } 100% { opacity: .55; } }
+
+    .party .beam { opacity: .6; animation-play-state: running; }
+    .party .lamp { opacity: 1; }
+    .party #ball { transform: translate(-50%, 0); }
+    .party #sparkles { opacity: 1; animation-play-state: running; }
+    .party #flash { animation: flash .48s ease-out infinite; }
+    .party .swal2-container { animation: groove .96s ease-in-out infinite alternate; }
+    .party .ghost.on { opacity: .7; animation: bob .48s ease-in-out infinite alternate; }
+    .party #code { animation: codecolor 1.92s linear infinite; }
+    .party #grid { animation-duration: .96s; opacity: .85; }
+    .party #floor { animation: pulse .48s ease-out infinite; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .party #flash { animation: none; }
+      .party .swal2-container, .party .ghost.on { animation: none; }
+    }
+
+    /* ============ RESPONSIVE ============ */
+    html, body { height: 100dvh; }
+    #hud button { min-width: 36px; min-height: 32px; text-align: center; touch-action: manipulation; }
+    #play { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+    /* que los alerts de abajo no tapen la barra de tiempo ni la zona del notch */
+    .swal2-container {
+      padding: max(12px, env(safe-area-inset-top)) 12px calc(56px + env(safe-area-inset-bottom)) !important;
+    }
+
+    /* tablet */
+    @media (max-width: 900px) {
+      .beam { width: 46vw; margin-left: -23vw; min-width: 0; }
+    }
+
+    /* celular */
+    @media (max-width: 600px) {
+      #code {
+        padding: max(16px, env(safe-area-inset-top)) 16px 16px;
+        font-size: 14px; line-height: 1.5;
+        white-space: pre-wrap; word-break: break-word;   /* que la letra no se corte en el borde */
+      }
+      #start p { letter-spacing: .25em; font-size: 11px; }
+      #start small { font-size: 16px; }
+      #play { font-size: 14px; padding: 14px 28px; }
+      #eq { height: 16vh; }
+
+      .dl-popup .swal2-title { font-size: 14px !important; }
+      .dl-popup .swal2-icon { width: 36px !important; height: 36px !important; margin: 20px 0 14px 16px !important; }
+      .dl-popup .swal2-icon .swal2-icon-content { font-size: 21px !important; }
+      .dl-popup .swal2-html-container { font-size: 15px !important; padding: 20px 16px 14px 12px !important; }
+      .dl-popup .swal2-confirm { min-width: 84px; padding: 7px 16px !important; }
+
+      .ghost { width: 66vw; }
+      .ghost .b { padding: 10px 12px 14px; font-size: 13px; }
+      .ghost .b::before { width: 24px; height: 24px; font-size: 14px; }
+
+      /* menos reflectores en pantallas chicas: se ve más limpio y va más fluido */
+      .beam { width: 70vw; margin-left: -35vw; }
+      .beam.alt, .lamp.alt { display: none; }
+      #ball { width: 70px; }
+      #sparkles i:nth-child(2n) { display: none; }
+      @keyframes groove {
+        0%   { transform: translate(-6px, 0) rotate(-1.5deg); }
+        50%  { transform: translate(0, -6px) rotate(0); }
+        100% { transform: translate(6px, 0) rotate(1.5deg); }
+      }
+    }
+
+    /* celular muy angosto */
+    @media (max-width: 360px) {
+      #code { font-size: 12px; }
+      #hud { font-size: 10px; gap: 8px; }
+    }
+
+    /* celular acostado (poca altura) */
+    @media (max-height: 500px) and (orientation: landscape) {
+      #code { font-size: 13px; line-height: 1.35; padding-top: 10px; }
+      #start h1 { font-size: clamp(36px, 9vw, 70px); }
+      #start p { margin-bottom: 16px; }
+      #eq { height: 18vh; }
+      #ball { width: 56px; }
+      .ghost { width: 40vw; }
+      .dl-popup .swal2-icon { margin: 14px 0 10px 16px !important; }
+      .dl-popup .swal2-html-container { padding: 14px 16px 10px 12px !important; }
+      .dl-popup .swal2-actions { padding: 6px 12px 10px !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="floor"></div>
+  <div id="grid"></div>
+  <canvas id="eq"></canvas>
+  <div id="code"></div>
+  <div class="scan"></div>
+  <div class="scan b"></div>
+  <div class="scan c"></div>
+  <div id="sparkles"></div>
+  <div id="lights"></div>
+  <div id="ball"><img src="disco-ball.png" alt=""></div>
+  <div id="flash"></div>
+  <div id="crt"></div>
+  <div id="vignette"></div>
+
+  <div id="hud">
+    <span id="time">0:00</span>
+    <div id="bar"><i></i></div>
+    <button id="restart">↻</button>
+  </div>
+
+  <div id="start">
+    <div>
+      <h1>Digital Love</h1>
+      <p>Daft Punk · I had a dream</p>
+      <button id="play">▶ PLAY</button>
+      <small>sube el volumen 🎧</small>
+    </div>
+  </div>
+
+  <audio id="song" src="song.mp3" preload="auto"></audio>
+
+  <script>
+    /* ============ LETRA + TIEMPOS (segundos) ============
+       Tiempos sacados del audio con reconocimiento de voz (Whisper), palabra por palabra. */
+    const LYRICS = [
+      [0.0, "Last night I had a dream about you."],
+      [3.5, "In this dream, I'm dancing right beside you."],
+      [7.4, "And it looked like everyone was having fun."],
+      [11.1, "The kind of feeling I've waited so long."],
+      [15.3, "Don't stop, come a little closer."],
+      [18.6, "As we jam, the rhythm gets stronger."],
+      [22.7, "There's nothing wrong with just a little, little fun."],
+      [26.5, "We were dancing all night long."],
+      [30.4, "The time is right to put my arms around you."],
+      [34.2, "You're feeling right."],
+      [35.6, "You wrap your arms around too."],
+      [38.3, "But suddenly, I feel the shining sun."],
+      [42.2, "Before I knew it, this dream was all gone."],
+      [47.3, "Ooh, I don't know what to do"],
+      [50.7, "About this dream and you."],
+      [55.0, "I wish this dream comes true."],
+    ];
+    // Desde aquí (un poco antes del "Ooh") se prende la fiesta: reflectores, bola disco y baile
+    const PARTY_START = 46.8;
+    const GLOWS = ["rgba(255,47,179,.6)", "rgba(25,240,255,.55)", "rgba(255,204,51,.55)", "rgba(138,43,226,.6)"];
+
+    const audio = document.getElementById("song");
+    const codeEl = document.getElementById("code");
+    const barEl = document.querySelector("#bar i");
+    const timeEl = document.getElementById("time");
+    let idx = 0, ghosts = [];
+
+    /* ---------- código de fondo (como el del video) ---------- */
+    const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    const codeLines = [
+      `<span class="kw">import</span> tkinter.messagebox <span class="kw">as</span> mb`,
+      ``,
+      `<span class="kw">def</span> <span class="fn">digital_love</span>():`,
+    ];
+    function renderCode(typing = "") {
+      const all = [...codeLines];
+      if (typing) all.push(typing);
+      // mostrar sólo las últimas líneas que caben en la pantalla (en celular las líneas largas ocupan 2-3 renglones)
+      let from = Math.max(0, all.length - 40);
+      do {
+        codeEl.innerHTML = all.slice(from).join("\n") + `<span class="cur"></span>`;
+        from++;
+      } while (codeEl.scrollHeight > codeEl.clientHeight && from < all.length);
+    }
+    let resizeTimer;
+    addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => renderCode(), 150); });
+    function typeCodeLine(text) {
+      const full = `    mb.<span class="fn">showinfo</span>(<span class="s">"Digital Love"</span>, <span class="s">"${esc(text)}"</span>),`;
+      const plain = `    mb.showinfo("Digital Love", "${text}"),`;
+      let i = 0;
+      const step = () => {
+        i += 3;
+        if (i >= plain.length) { codeLines.push(full); renderCode(); return; }
+        renderCode(esc(plain.slice(0, i)));
+        setTimeout(step, 18);
+      };
+      step();
+    }
+    renderCode();
+
+    /* ---------- reflectores y reflejos de la bola ---------- */
+    (function buildLights() {
+      const lights = document.getElementById("lights");
+      const beams = [
+        { x: 8,  c: "#ff2fb3", from: "-10deg", to: "-55deg", speed: "1.92s", delay: "0s" },
+        { x: 30, c: "#19f0ff", from: "30deg",  to: "-25deg", speed: "2.4s",  delay: "-.6s" },
+        { x: 50, c: "#ffcc33", from: "-30deg", to: "30deg",  speed: "1.92s", delay: "-.96s" },
+        { x: 70, c: "#8a5cff", from: "-30deg", to: "25deg",  speed: "2.4s",  delay: "-1.2s" },
+        { x: 92, c: "#2fff9a", from: "10deg",  to: "55deg",  speed: "1.92s", delay: "-.3s" },
+      ];
+      beams.forEach((b, k) => {
+        const alt = k % 2 ? " alt" : "";   // en celular se ocultan los "alt" y quedan 3 reflectores
+        const beam = document.createElement("div");
+        beam.className = "beam" + alt;
+        beam.style.cssText = `left:${b.x}%;--c:${b.c};--from:${b.from};--to:${b.to};--speed:${b.speed};--delay:${b.delay}`;
+        const lamp = document.createElement("div");
+        lamp.className = "lamp" + alt;
+        lamp.style.cssText = `left:${b.x}%;--c:${b.c}`;
+        lights.append(beam, lamp);
+      });
+      const sp = document.getElementById("sparkles");
+      const colors = ["#fff", "#ff9be0", "#9ef7ff", "#ffe39a", "#c9b6ff"];
+      for (let i = 0; i < 90; i++) {
+        const dot = document.createElement("i");
+        dot.style.left = Math.random() * 100 + "%";
+        dot.style.top = Math.random() * 100 + "%";
+        dot.style.setProperty("--c", colors[i % colors.length]);
+        dot.style.animationDelay = (-Math.random() * 1.2) + "s";
+        sp.appendChild(dot);
+      }
+    })();
+
+    /* ---------- alerts ---------- */
+    function ghostFrom(text) {
+      const g = document.createElement("div");
+      g.className = "ghost";
+      g.innerHTML = `<div class="t">✒ Digital Love</div><div class="b"></div>`;
+      g.querySelector(".b").textContent = text;
+      document.body.appendChild(g);
+      // posición al azar sin salirse de la pantalla, sea cual sea el tamaño
+      const w = g.offsetWidth, h = g.offsetHeight;
+      g.style.left = Math.random() * Math.max(0, innerWidth - w) + "px";
+      g.style.top = Math.max(8, Math.random() * (innerHeight * .8 - h)) + "px";
+      requestAnimationFrame(() => g.classList.add("on"));
+      ghosts.push(g);
+      const maxGhosts = innerWidth < 600 ? 3 : 5;
+      while (ghosts.length > maxGhosts) { const old = ghosts.shift(); old.classList.add("off"); setTimeout(() => old.remove(), 500); }
+    }
+
+    function showLine(i) {
+      const [t, text] = LYRICS[i];
+      const next = LYRICS[i + 1] ? LYRICS[i + 1][0] : audio.duration || t + 4;
+      const dur = Math.max(1200, (next - t) * 1000 - 150);
+      typeCodeLine(text);
+      if (i > 0) ghostFrom(LYRICS[i - 1][1]);
+
+      // posición aleatoria suave
+      const positions = ["center", "top", "bottom", "center-start", "center-end", "top-start", "top-end", "bottom-start", "bottom-end"];
+      const party = t >= PARTY_START;   // en el coro la bola disco ocupa la parte de arriba
+      const small = innerWidth < 600 || innerHeight < 500;
+      const pool = small ? (party ? ["center", "bottom"] : ["center", "top", "bottom"])
+                         : (party ? positions.filter(p => !p.startsWith("top")) : positions);
+      const pos = small ? pool[i % pool.length] : pool[Math.floor(Math.random() * pool.length)];
+
+      Swal.fire({
+        title: "Digital Love",
+        text,
+        icon: "info",
+        iconHtml: "i",
+        confirmButtonText: "Aceptar",
+        showCloseButton: true,
+        position: pos,
+        backdrop: false,
+        timer: dur,
+        timerProgressBar: true,
+        allowOutsideClick: false,
+        returnFocus: false,
+        customClass: { popup: "dl-popup" },
+        showClass: { popup: "dl-in" },
+        hideClass: { popup: "dl-out" },
+        didOpen: el => el.style.setProperty("--glow", GLOWS[i % GLOWS.length]),
+      });
+    }
+
+    function finale() {
+      Swal.fire({
+        title: "Digital Love",
+        html: "💿 <b>Fin.</b> ¿Otra vez?",
+        icon: "question",
+        iconHtml: "?",
+        confirmButtonText: "Repetir",
+        backdrop: false,
+        customClass: { popup: "dl-popup" },
+        showClass: { popup: "dl-in" },
+        hideClass: { popup: "dl-out" },
+      }).then(r => { if (r.isConfirmed) restart(); });
+    }
+
+    /* ---------- reloj principal ---------- */
+    // setInterval (no requestAnimationFrame) para que la letra no se atrase si la pestaña pierde el foco
+    function tick() {
+      const t = audio.currentTime;
+      let due = idx;
+      while (due < LYRICS.length && t >= LYRICS[due][0]) due++;
+      if (due > idx) { idx = due; showLine(due - 1); }  // si hubo salto, muestra sólo la línea actual
+      document.body.classList.toggle("party", t >= PARTY_START);
+      if (audio.duration) barEl.style.width = (t / audio.duration * 100) + "%";
+      timeEl.textContent = Math.floor(t / 60) + ":" + String(Math.floor(t % 60)).padStart(2, "0");
+    }
+
+    function clearGhosts() { ghosts.forEach(g => g.remove()); ghosts = []; }
+    function restart() {
+      Swal.close(); clearGhosts();
+      codeLines.length = 3; renderCode();
+      idx = 0;
+      audio.currentTime = 0; audio.play();
+    }
+
+    /* ---------- ecualizador con Web Audio ---------- */
+    let analyser, freq;
+    function setupAudio() {
+      // Abierto como archivo (file://) el navegador silencia el audio que pasa por Web Audio,
+      // así que ahí usamos un ecualizador simulado y la canción suena normal.
+      if (location.protocol === "file:") { fakeEq(); return; }
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = ctx.createMediaElementSource(audio);
+        analyser = ctx.createAnalyser(); analyser.fftSize = 128;
+        src.connect(analyser); analyser.connect(ctx.destination);
+        freq = new Uint8Array(analyser.frequencyBinCount);
+        drawEq();
+      } catch (e) { fakeEq(); }
+    }
+    function fakeEq() {
+      freq = new Uint8Array(64);
+      analyser = {
+        getByteFrequencyData(a) {
+          const t = audio.currentTime, beat = Math.pow(1 - (t * 125 / 60) % 1, 3); // 125 bpm
+          for (let i = 0; i < a.length; i++)
+            a[i] = audio.paused ? 0 : Math.min(255, 90 + 120 * beat * (1 - i / a.length) + 60 * Math.abs(Math.sin(t * 3 + i * .7)) * Math.random());
+        }
+      };
+      drawEq();
+    }
+    function drawEq() {
+      const c = document.getElementById("eq"), g = c.getContext("2d");
+      const draw = () => {
+        c.width = innerWidth; c.height = innerHeight * .22;
+        analyser.getByteFrequencyData(freq);
+        const n = 48, w = c.width / n;
+        const grad = g.createLinearGradient(0, c.height, 0, 0);
+        grad.addColorStop(0, "#ff2fb3"); grad.addColorStop(.6, "#8a2be2"); grad.addColorStop(1, "#19f0ff");
+        g.fillStyle = grad;
+        for (let i = 0; i < n; i++) {
+          const v = freq[Math.floor(i / n * freq.length * .8)] / 255;
+          const h = v * c.height;
+          for (let y = 0; y < h; y += 8) g.fillRect(i * w + 2, c.height - y - 6, w - 4, 6);
+        }
+        document.body.classList.toggle("beat", freq[2] > 230);
+        requestAnimationFrame(draw);
+      };
+      draw();
+    }
+
+    /* ---------- controles ---------- */
+    document.getElementById("play").onclick = () => {
+      document.getElementById("start").remove();
+      setupAudio();
+      audio.play();
+      setInterval(tick, 40);
+    };
+    document.getElementById("restart").onclick = restart;
+    audio.addEventListener("ended", () => setTimeout(finale, 400));
+  </script>
+</body>
+
+</html>
